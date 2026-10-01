@@ -3,6 +3,10 @@ AllCops:
   SuggestExtensions: false
   TargetRubyVersion: 3.4
 
+Metrics/BlockLength:
+  Exclude:
+    - "spec/**/*"
+
 Style/Documentation:
   Enabled: false
 
