@@ -15,6 +15,14 @@ RSpec.describe Pharmacy::Processor do
     expect(prescriptions[%w[Mark B]]).to be_a(Pharmacy::Prescription)
   end
 
+  it "preserves prescription activity when creation is repeated" do
+    %i[created filled returned created].each do |type|
+      processor.handle(event(type))
+    end
+
+    expect(prescriptions[%w[Mark B]]).to have_attributes(fills: 0, returns: 1)
+  end
+
   it "applies a prescription lifecycle" do
     %i[created filled filled returned filled].each do |type|
       processor.handle(event(type))

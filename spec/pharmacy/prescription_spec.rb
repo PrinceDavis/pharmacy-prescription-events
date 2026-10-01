@@ -15,4 +15,23 @@ RSpec.describe Pharmacy::Prescription do
 
     expect(prescription).to have_attributes(fills: 2, returns: 1)
   end
+
+  it "discards a return without an outstanding fill" do
+    prescription.return
+
+    expect(prescription).to have_attributes(fills: 0, returns: 0)
+  end
+
+  it "records only returns backed by fills, including subsequent fills" do
+    prescription.fill
+    prescription.return
+    prescription.return
+
+    expect(prescription).to have_attributes(fills: 0, returns: 1)
+
+    prescription.fill
+    prescription.return
+
+    expect(prescription).to have_attributes(fills: 0, returns: 2)
+  end
 end

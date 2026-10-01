@@ -1,25 +1,43 @@
 # Pharmacy Prescription Events
 
-A small Ruby application that processes prescription lifecycle events and reports each patient's current fills and derived income. The project uses Ruby 3.4.11.
+A small Ruby application that processes prescription lifecycle events and reports each patient's current fills and derived income.
 
 ## Running
 
-Install dependencies:
+Ruby 3.4.11 and Bundler 2.6.9 must be installed and active before setup. These versions match `.ruby-version`, `Gemfile`, and `Gemfile.lock`.
 
 ```bash
+ruby --version
+bundle --version
 bundle install
 ```
 
-Process events from a file:
+Each input line has three whitespace-separated fields:
+
+```text
+patient drug event
+```
+
+Patient and drug identifiers are single tokens. The supported event names are `created`, `filled`, and `returned`.
+
+Process the checked-in sample from a file:
 
 ```bash
 ./bin/process-pharmacy-events sample.txt
 ```
 
-Or provide events through standard input:
+Or provide it through standard input:
 
 ```bash
 cat sample.txt | ./bin/process-pharmacy-events
+```
+
+Both commands produce:
+
+```text
+Nick: 0 fills $0 income
+Mark: 2 fills $9 income
+John: 0 fills -$1 income
 ```
 
 Run the tests:
@@ -60,7 +78,7 @@ ReportFormatter
 
 `Pharmacy::Application` composes these components. It reads the supplied input line by line, owns the prescription Hash for that run, and returns the final formatted report as a string. The executable chooses either a file or standard input, calls the application, and writes the result to standard output.
 
-Parsing, state transitions, reporting, and presentation are separate responsibilities. The design is deliberately small: each boundary reflects a behavior required by the exercise, without adding frameworks or abstractions that the problem does not justify.
+Parsing, state transitions, reporting, and presentation are separate responsibilities. The design is deliberately small: each boundary reflects required behavior without adding frameworks or abstractions that the problem does not justify.
 
 ## Data Structures
 
@@ -77,17 +95,17 @@ A prescription is identified by patient and drug. Ruby Arrays have value-based e
 A `Prescription` stores only:
 
 - its current fill count
-- its return count
+- its accepted return count
 
 Income and patient totals are derived later rather than stored as additional mutable state.
 
-`PrescriptionEvent` is an immutable value object containing the patient, drug, and event type. It gives the rest of the application a domain representation, so raw input lines and textual event names do not leak beyond parsing. `PatientReport` is likewise an immutable value containing the final patient, fills, and income values.
+`PrescriptionEvent` is a value object with read-only members for patient, drug, and event type. It gives the rest of the application a domain representation, so raw input lines and textual event names do not leak beyond parsing. `PatientReport` is also a value object with read-only members for patient, fills, and income.
 
 ## Design Decisions
 
 ### Parsing versus lifecycle rules
 
-`EventParser` translates one line of text into a `PrescriptionEvent`; it does not decide whether that event is valid for the current state. For example, `Mark B filled` is syntactically valid even when that prescription has not been created. `Processor` owns that lifecycle decision and discards the premature fill.
+`EventParser` translates one line of text into a `PrescriptionEvent`; it does not decide whether that event is valid for the current state. For example, `Mark B filled` is syntactically valid even when that prescription has not been created. `Processor` owns the lifecycle decision and discards that event.
 
 ### Processor and state ownership
 
@@ -100,26 +118,32 @@ processor = Pharmacy::Processor.new(prescriptions)
 
 The processor exposes `handle(event)`. This keeps ownership and lifetime of the state in the composition layer while avoiding the need to pass the same Hash into every operation.
 
+Creation is idempotent for each patient/drug pair. A repeated `created` event keeps the existing `Prescription`, including its fill and return activity, rather than replacing it with a fresh object.
+
+Fills and returns received before creation are permanently discarded. Creating the prescription later does not replay those earlier events.
+
 ### Prescription behavior
 
-`Processor` locates the prescription and decides which operation applies. `Prescription` owns the actual fill and return transitions on its counters. This keeps orchestration separate from the object responsible for maintaining valid prescription state.
+`Processor` locates the prescription and decides which operation applies. `Prescription` owns the fill and return transitions on its counters.
+
+A return cancels one outstanding fill and records a $1 loss. When no fill is outstanding, the return is discarded: neither counter changes. This prevents negative fill counts and financial deductions for returns that cannot be matched to a fill. A later fill remains eligible for a normal return.
 
 ### Derived income
 
 Income is not stored on `Prescription`; `ReportBuilder` derives it from final state:
 
 ```text
-income = (current fills * 5) - returns
+income = (current fills * 5) - accepted returns
 ```
 
-A return removes a prior fill from the current fill count and contributes the specified $1 loss. Therefore:
+For example:
 
 ```text
 filled
 returned
 ```
 
-produces zero current fills and `-$1` income. This interpretation is necessary to match the exercise's supplied output.
+produces zero current fills and `-$1` income. The return removes the outstanding fill and contributes the specified $1 loss, matching the exercise's supplied output.
 
 ### Derived patient totals
 
@@ -143,14 +167,15 @@ The project was developed through lean Red → Green → Refactor cycles. Tests 
 
 Lower-level specs cover:
 
-- immutable event representation
-- text-to-event parsing
-- prescription fill and return transitions
-- event dispatch and pre-creation discards
+- parsing each textual event type into a `PrescriptionEvent`
+- prescription fill, return, refill, and unmatched-return behavior
+- event dispatch, idempotent creation, and pre-creation discards
 - patient aggregation and income derivation
 - report formatting, including negative income
 
-Higher-level specs cover application composition and both executable input modes using in-memory IO or temporary files. They verify integration without repeating every domain rule. Tests also trust guarantees made explicitly by the exercise instead of adding defensive cases for impossible or malformed states outside the contract.
+Application specs cover composition, independent prescriptions across patients and drugs, lifecycle outcomes, and the fact that discarded events are not replayed. Executable specs cover both file and standard-input wiring, including output, final newlines, empty standard error, and successful exit status.
+
+Malformed input remains outside the stated input contract, so the suite does not add speculative validation cases.
 
 ## Complexity
 

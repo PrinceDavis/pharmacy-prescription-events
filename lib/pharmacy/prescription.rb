@@ -14,6 +14,8 @@ module Pharmacy
     end
 
     def return
+      return if @fills.zero?
+
       @fills -= 1
       @returns += 1
     end

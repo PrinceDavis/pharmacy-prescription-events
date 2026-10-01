@@ -17,7 +17,7 @@ module Pharmacy
     private
 
     def handle_created(event)
-      @prescriptions[prescription_key(event)] = Prescription.new
+      @prescriptions[prescription_key(event)] ||= Prescription.new
     end
 
     def handle_filled(event)
