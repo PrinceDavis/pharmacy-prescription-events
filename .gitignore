@@ -1,0 +1,7 @@
+.bundle/
+vendor/bundle/
+coverage/
+.rspec_status
+.DS_Store
+*.swp
+*.swo
