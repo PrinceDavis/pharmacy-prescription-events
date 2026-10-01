@@ -2,7 +2,7 @@
 
 module Pharmacy
   module Application
-    def self.run(input:, output:)
+    def self.run(input:)
       prescriptions = {}
       processor = Processor.new(prescriptions)
 
@@ -10,9 +10,8 @@ module Pharmacy
         processor.handle(EventParser.parse(line))
       end
 
-      ReportBuilder.build(prescriptions).each do |report|
-        output.puts(ReportFormatter.format(report))
-      end
+      reports = ReportBuilder.build(prescriptions)
+      reports.map { |report| ReportFormatter.format(report) }.join("\n")
     end
   end
 end

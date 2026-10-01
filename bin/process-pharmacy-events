@@ -8,7 +8,7 @@ require "pharmacy"
 input = ARGV.empty? ? $stdin : File.open(ARGV.first)
 
 begin
-  Pharmacy::Application.run(input:, output: $stdout)
+  $stdout.puts(Pharmacy::Application.run(input:))
 ensure
   input.close unless input.equal?($stdin)
 end

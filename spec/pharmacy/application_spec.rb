@@ -3,7 +3,7 @@
 require "stringio"
 
 RSpec.describe Pharmacy::Application do
-  it "processes prescription events and writes one report line per patient" do
+  it "processes prescription events and returns one report line per patient" do
     input = StringIO.new(<<~INPUT)
       Nick A created
       Mark B created
@@ -17,11 +17,9 @@ RSpec.describe Pharmacy::Application do
       John E filled
       John E returned
     INPUT
-    output = StringIO.new
+    output = described_class.run(input:)
 
-    described_class.run(input:, output:)
-
-    expect(output.string.lines(chomp: true)).to contain_exactly(
+    expect(output.lines(chomp: true)).to contain_exactly(
       "Mark: 2 fills $9 income",
       "John: 0 fills -$1 income",
       "Nick: 0 fills $0 income"
