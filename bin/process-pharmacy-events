@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+$LOAD_PATH.unshift File.expand_path("../lib", __dir__)
+
+require "pharmacy"
+
+input = ARGV.empty? ? $stdin : File.open(ARGV.first)
+
+begin
+  Pharmacy::Application.run(input:, output: $stdout)
+ensure
+  input.close unless input.equal?($stdin)
+end

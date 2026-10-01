@@ -13,10 +13,16 @@ bundle install
 
 ## Run the CLI
 
-The executable currently loads the application without performing any business behavior:
+Process events from a file:
 
 ```sh
-bin/pharmacy
+./bin/process-pharmacy-events events.txt
+```
+
+Or pipe events through standard input:
+
+```sh
+cat events.txt | ./bin/process-pharmacy-events
 ```
 
 ## Run the tests and lint
@@ -31,4 +37,4 @@ The default Rake task runs both the test suite and RuboCop. Run only linting wit
 
 ## Status
 
-The project foundation is in place. Prescription event processing and all related business behavior have not yet been implemented.
+The prescription event processing pipeline and executable are implemented.
