@@ -13,13 +13,13 @@ bundle install
 Process events from a file:
 
 ```bash
-./bin/process-pharmacy-events events.txt
+./bin/process-pharmacy-events sample.txt
 ```
 
 Or provide events through standard input:
 
 ```bash
-cat events.txt | ./bin/process-pharmacy-events
+cat sample.txt | ./bin/process-pharmacy-events
 ```
 
 Run the tests:
