@@ -19,12 +19,15 @@ The executable currently loads the application without performing any business b
 bin/pharmacy
 ```
 
-## Run the tests
+## Run the tests and lint
 
 ```sh
 bundle exec rspec
+bundle exec rubocop
 bundle exec rake
 ```
+
+The default Rake task runs both the test suite and RuboCop. Run only linting with `bundle exec rake lint`.
 
 ## Status
 
